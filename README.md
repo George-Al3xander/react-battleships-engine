@@ -1,4 +1,4 @@
-# [Battleship Engine React](https://www.npmjs.com/package/@react/battleships-engine) 
+# [React Battleship Engine](https://www.npmjs.com/package/react-battleships-engine) 
 
 This package provides a TypeScript engine for the classic Battleship game, adapted for React using a custom hook, `useGameBoard`. The hook manages the game logic, including ship placement, tracking hits, and checking for victory conditions.
 
@@ -9,18 +9,18 @@ Based on the original [battleships-engine](https://www.npmjs.com/package/battles
 Install the package with npm or yarn:
 
 ```bash
-npm install @react/battleships-engine
+npm install react-battleships-engine
 ```
 
 or
 
 ```bash
-pnpm add @react/battleships-engine
+pnpm add react-battleships-engine
 ```
 or
 
 ```bash
-yarn add @react/battleships-engine
+yarn add react-battleships-engine
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ yarn add @react/battleships-engine
 You can import the `useGameBoard` hook and necessary types from the package:
 
 ```typescript
-import { useGameBoard, TCoords, ShipType, Direction  } from "@react/battleships-engine";
+import { useGameBoard, TCoords, ShipType, Direction  } from "react-battleships-engine";
 ```
 
 ### Example
@@ -41,7 +41,7 @@ You can use the `useGameBoard` hook to initialize a game board, place ships, and
 
 ```typescript
 import React, { useEffect } from "react";
-import { useGameBoard } from "@react/battleships-engine";
+import { useGameBoard } from "react-battleships-engine";
 
 const BattleshipGame: React.FC = () => {
     const {
