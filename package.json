@@ -1,0 +1,67 @@
+{
+    "name": "@react/battleships-engine",
+    "description": "A TypeScript-based Battleship game engine for React, featuring ship placement, attack handling, and game logic management.",
+    "license": "MIT",
+    "author": "George V.",
+    "version": "0.0.1",
+    "main": "dist/index.js",
+    "module": "dist/index.cjs",
+    "types": "dist/index.dt.ts",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.cjs"
+            },
+            "require": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "release": "pnpm run build && changeset publish",
+        "lint": "tsc",
+        "format": "pnpm exec prettier --write",
+        "test": "jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/George-Al3xander/react-battleships-engine.git"
+    },
+    "homepage": "https://github.com/George-Al3xander/react-battleships-engine#readme",
+    "devDependencies": {
+        "@changesets/cli": "^2.27.7",
+        "@eslint/js": "^9.9.1",
+        "@testing-library/react-hooks": "^8.0.1",
+        "@types/jest": "^29.5.12",
+        "@types/lodash": "^4.17.7",
+        "@types/react": "^18.3.5",
+        "eslint": "^9.9.1",
+        "globals": "^15.9.0",
+        "jest": "^29.7.0",
+        "prettier": "3.3.3",
+        "react-test-renderer": "^18.3.1",
+        "ts-jest": "^29.2.5",
+        "ts-node": "^10.9.2",
+        "tsup": "^8.2.4",
+        "typescript": "^5.5.4",
+        "typescript-eslint": "^8.3.0"
+    },
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "react": "^18.3.1"
+    },
+    "keywords": [
+        "battleship",
+        "typescript",
+        "react",
+        "game-engine",
+        "hook",
+        "useGameBoard",
+        "boardgame",
+        "game-development"
+    ]
+}
