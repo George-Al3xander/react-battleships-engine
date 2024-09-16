@@ -1,4 +1,3 @@
-import type { Direction, ShipType, TCoords } from "@/types/type";
 import { useEffect, useState } from "react";
 import {
     convertStringToCoords,
@@ -6,10 +5,11 @@ import {
     generateRandomDir,
     generateRandomShip,
 } from "@/utils";
-import Ship from "@/ship";
-import Coords from "@/coords";
-import { directionTypes, shipsLength } from "@/consts";
+
 import random from "lodash/random";
+import { Coords, Ship, Direction, ShipType, TCoords } from "battleships-engine";
+import { directionTypes, shipsLength } from "@/consts";
+
 const useGameBoard = (initialShips?: Ship[]) => {
     const [ships, setShips] = useState<Map<ShipType, Ship>>(() => {
         if (initialShips)
@@ -29,9 +29,21 @@ const useGameBoard = (initialShips?: Ship[]) => {
         }
         return new Map();
     });
+
     const [missed, setMissed] = useState<Map<string, boolean>>(
         generateGameBoardCells(),
     );
+
+    const [hitCells, setHitCells] = useState<Map<string, boolean>>(
+        generateGameBoardCells(),
+    );
+
+    const [hasLost, setHasLost] = useState(false);
+
+    useEffect(() => {
+        setHasLost(checkLoss());
+    }, [hitCells]);
+
     const fillTakenCellsWithShip = (
         ship: Ship,
         shipType: ShipType,
@@ -103,13 +115,19 @@ const useGameBoard = (initialShips?: Ship[]) => {
             const ship = ships.get(fromTaken);
 
             if (!ship) throw new Error(`${fromTaken} does not exist`);
-            else ship.hit();
+            else {
+                ship.hit();
+                setHitCells((prev) =>
+                    new Map(prev).set(coordsClass.toString(), true),
+                );
+            }
         } else
             setMissed((prev) =>
                 new Map(prev).set(coordsClass.toString(), true),
             );
     };
-    const hasLost = () => {
+
+    const checkLoss = () => {
         const currShips = Array.from(ships.keys());
         if (currShips.length > 0) {
             return !currShips
@@ -129,7 +147,7 @@ const useGameBoard = (initialShips?: Ship[]) => {
             const allCells = generateGameBoardCells();
             const emptyCells: string[] = [];
             for (const [cell] of allCells) {
-                if (takenCells.has(cell)) emptyCells.push(cell);
+                if (!takenCells.has(cell)) emptyCells.push(cell);
             }
 
             const possibleStarts = emptyCells.filter((str) => {
@@ -188,13 +206,17 @@ const useGameBoard = (initialShips?: Ship[]) => {
     const resetGameBoard = () => {
         setShips(new Map());
         setTakenCells(new Map());
-        setMissed(new Map());
+        setMissed(generateGameBoardCells());
+        setHitCells(generateGameBoardCells());
+        setHasLost(false);
     };
+
     return {
         placeShip,
         ships,
         takenCells,
         missed,
+        hitCells,
         randomlyPlaceShip,
         randomlyPlaceShips,
         hasLost,

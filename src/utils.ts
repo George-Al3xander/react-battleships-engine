@@ -1,14 +1,11 @@
 import random from "lodash/random";
-import type { Direction, ShipType, TCoords } from "@/types/type";
+import { Ship, Coords, Direction, ShipType, TCoords } from "battleships-engine";
 import {
     coordsType,
     directionTypes,
     numberRegExp,
     shipsLength,
 } from "@/consts";
-
-import Coords from "@/coords";
-import Ship from "@/ship";
 
 export const generateRandomCoords = (): Coords =>
     new Coords({ x: random(1, 10), y: random(1, 10) });
@@ -30,10 +27,10 @@ export const generateRandomShip = ({
     let coords = generateRandomCoords();
     const direction = generateRandomDir();
     if (direction === "hor" && coords.x + shipsLength[shipType] > 10) {
-        const { x, y } = coords;
+        const { x } = coords;
         coords.x = x - 1;
     } else if (direction === "vert" && coords.y + shipsLength[shipType] > 10) {
-        const { x, y } = coords;
+        const { y } = coords;
         coords.y = y - 1;
     }
     try {
@@ -50,7 +47,7 @@ export const generateRandomShip = ({
 export const generateGameBoardCells = (): Map<string, boolean> => {
     const map = new Map<string, boolean>();
 
-    coordsType.forEach((coordsType) => {
+    coordsType.forEach(() => {
         for (let i = 1; i <= 10; i++) {
             for (let j = 1; j <= 10; j++) {
                 map.set(`(${i},${j})`, false);

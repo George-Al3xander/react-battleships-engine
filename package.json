@@ -45,6 +45,7 @@
         "@types/lodash": "^4.17.7",
         "@types/react": "^18.3.5",
         "@types/react-dom": "^18.3.0",
+        "clsx": "^2.1.1",
         "eslint": "^9.9.1",
         "eslint-plugin-jest-dom": "^5.4.0",
         "eslint-plugin-testing-library": "^6.3.0",
@@ -61,6 +62,7 @@
         "typescript-eslint": "^8.3.0"
     },
     "dependencies": {
+        "battleships-engine": "^0.2.6",
         "lodash": "^4.17.21",
         "react": "^18.3.1"
     },

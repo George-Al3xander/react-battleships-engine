@@ -1,9 +1,10 @@
 import useGameBoard from "@/hooks/use-gameboard";
-import Ship from "@/ship";
-import type { ShipType, TCoords } from "@/types/type";
+
+import { Ship, ShipType, TCoords } from "battleships-engine";
 import { shipsLength } from "@/consts";
 import { isGameboardValid } from "@/utils";
 import { act, renderHook } from "@testing-library/react-hooks";
+import { waitFor } from "@testing-library/dom";
 
 const receiveAttackSetup = (
     ships: Ship[],
@@ -19,25 +20,21 @@ const receiveAttackSetup = (
             jest.spyOn(result.current.ships.get(type)!, "hit"),
         );
     }
-    for (const ship of ships) {
-        for (const coord of ship) {
-            act(() => {
+    act(() => {
+        for (const ship of ships) {
+            for (const coord of ship) {
                 result.current.receiveAttack(coord);
-            });
-        }
-    }
-    if (extraCoords) {
-        if (Array.isArray(extraCoords)) {
-            for (const coord of extraCoords) {
-                act(() => {
-                    result.current.receiveAttack(coord);
-                });
             }
-        } else
-            act(() => {
-                result.current.receiveAttack(extraCoords);
-            });
-    }
+        }
+        if (extraCoords) {
+            if (Array.isArray(extraCoords)) {
+                for (const coord of extraCoords) {
+                    result.current.receiveAttack(coord);
+                }
+            } else result.current.receiveAttack(extraCoords);
+        }
+    });
+
     if (spies) return { spies, result, receiveAttack };
     return { result, receiveAttack };
 };
@@ -157,6 +154,7 @@ describe("GameBoard", () => {
     describe("receiveAttack", () => {
         let hookRes: ReturnType<typeof receiveAttackSetup> | undefined =
             undefined;
+
         beforeAll(() => {
             const ships = [
                 new Ship({
@@ -177,6 +175,7 @@ describe("GameBoard", () => {
             ];
             hookRes = receiveAttackSetup(ships, { x: 4, y: 10 }, ["cruiser"]);
         });
+
         it("should call the hit function after the successful receiveAttack call", () => {
             const { result, spies, receiveAttack } = hookRes!;
             const [hitFunc] = spies!;
@@ -187,16 +186,19 @@ describe("GameBoard", () => {
         });
 
         it("should sunk the ship", () => {
-            const { result, spies, receiveAttack } = hookRes!;
+            const { result } = hookRes!;
 
             expect(result.current.ships.get("cruiser")?.isSunk()).toBe(true);
             expect(result.current.ships.get("cruiser")?.beenHitTimes).toBe(2);
         });
-        it("should add the coordinates to the 'missed' array", () => {
-            const { result, spies, receiveAttack } = hookRes!;
 
-            expect(receiveAttack).toHaveBeenCalledWith(
-                expect.objectContaining({ x: 4, y: 10 }),
+        it("should add the coordinates to the 'missed' array", async () => {
+            const { result, receiveAttack } = hookRes!;
+
+            await waitFor(() =>
+                expect(receiveAttack).toHaveBeenCalledWith(
+                    expect.objectContaining({ x: 4, y: 10 }),
+                ),
             );
             expect(result.current.missed.get("(4,10)")).toBe(true);
         });
@@ -225,10 +227,6 @@ describe("GameBoard", () => {
                         direction: "hor",
                     });
                 });
-                // act(() => {
-                //     result.current.receiveAttack({ x: 10, y: 10 });
-                // });
-                // expect(result.current.missed.get("(10,10)")).toBe(true);
                 for (let i = 0; i < shipsLength[type]; i++) {
                     act(() => {
                         result.current.receiveAttack({
@@ -239,13 +237,10 @@ describe("GameBoard", () => {
                 }
             });
 
-            let hasLost = false;
-            act(() => {
-                hasLost = result.current.hasLost();
-            });
-            expect(hasLost).toBe(true);
+            expect(result.current.hasLost).toBe(true);
         });
     });
+
     it("should randomly place ships", () => {
         const { result } = renderHook(() => useGameBoard());
 

@@ -3,7 +3,7 @@ import {
     generateRandomShip,
     isGameboardValid,
 } from "@/utils";
-import Ship from "@/ship";
+import { Ship } from "battleships-engine";
 
 const repeatTestTimes = (cb: Function, count: number | undefined = 5) => {
     for (let i = 0; i < count; i++) {

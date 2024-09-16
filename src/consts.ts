@@ -1,4 +1,4 @@
-import type { ShipType } from "@/types/type";
+import type { ShipType } from "battleships-engine";
 
 export const shipsLength: { [K in ShipType]: number } = {
     aircraft_carrier: 5,
