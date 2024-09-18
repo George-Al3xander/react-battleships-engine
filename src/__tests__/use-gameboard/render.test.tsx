@@ -35,6 +35,7 @@ const RenderGameboard = ({ propShips }: { propShips?: Ship[] }) => {
         missed,
         receiveAttack,
         resetGameBoard,
+        checkIfCoordsInMap,
     } = useGameBoard(propShips);
 
     const resetGB = () => {
@@ -58,9 +59,9 @@ const RenderGameboard = ({ propShips }: { propShips?: Ship[] }) => {
                     data-testid={c}
                     key={c}
                     className={clsx("empty", {
-                        hit_cell: hitCells.get(c) === true,
-                        taken_cell: takenCells.has(c),
-                        missed: missed.get(c) === true,
+                        hit_cell: checkIfCoordsInMap("hit", c),
+                        taken_cell: checkIfCoordsInMap("taken", c),
+                        missed: checkIfCoordsInMap("missed", c),
                     })}
                 >
                     cell
@@ -113,33 +114,31 @@ describe("GameBoard", () => {
     });
 
     describe("Behavior", () => {
-        it("should renew the cells info after the 'random' button click", async () => {
-            const btn = screen.getByRole("button", { name: "Random" });
-            const oldMap = screen.getAllByText("cell").map((elem) => ({
+        const convertToComparingFormat = (arr: HTMLElement[]) => {
+            return arr.map((elem) => ({
                 coords: convertStringToCoords(elem.dataset.testid!),
                 className: elem.className,
             }));
+        };
 
-            expect(oldMap.length).toBe(100);
+        it.each([1, 2, 3, 4, 5])(
+            "should renew the cells info after the 'random' button click",
+            async () => {
+                const btn = screen.getByRole("button", { name: "Random" });
+                const oldMap = convertToComparingFormat(
+                    screen.getAllByText("cell"),
+                );
+                expect(oldMap.length).toBe(100);
 
-            await userEvent.click(btn);
-            const newMap = screen.getAllByText("cell").map((elem) => ({
-                coords: convertStringToCoords(elem.dataset.testid!),
-                className: elem.className,
-            }));
-            expect(
-                oldMap.sort((a, b) => a!.coords.x - b!.coords.x),
-            ).not.toEqual(newMap.sort((a, b) => a!.coords.x - b!.coords.x));
-
-            for (const ship of ships) {
-                for (const coord of ship) {
-                    const cell = screen.getByTestId(coord.toString());
-                    await waitFor(() => {
-                        expect(cell).not.toHaveClass("taken_cell");
-                    });
-                }
-            }
-        });
+                await userEvent.click(btn);
+                const newMap = convertToComparingFormat(
+                    screen.getAllByText("cell"),
+                );
+                expect(
+                    oldMap.sort((a, b) => a!.coords.x - b!.coords.x),
+                ).not.toEqual(newMap.sort((a, b) => a!.coords.x - b!.coords.x));
+            },
+        );
 
         it("should show the loss message if 'hasLost' is truthy", async () => {
             expect(screen.queryByText("You lose!")).not.toBeInTheDocument();

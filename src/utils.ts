@@ -6,6 +6,7 @@ import {
     numberRegExp,
     shipsLength,
 } from "@/consts";
+import { sample } from "lodash";
 
 export const generateRandomCoords = (): Coords =>
     new Coords({ x: random(1, 10), y: random(1, 10) });
@@ -71,25 +72,102 @@ export const convertStringToCoords = (str: string): TCoords => {
     return { x, y };
 };
 
-export const isGameboardValid = (ships: Map<ShipType, Ship>) => {
-    let isMatch = false;
+export const checkShipsPlacement = (ships: Map<ShipType, Ship>) => {
+    let isValid = false;
     if (ships.size <= 4) return false;
     else {
-        ships.forEach((currentShip, currentShipType) => {
+        for (const [currentShipType, currentShip] of ships.entries()) {
             for (const [anyShipType, anyShip] of ships.entries()) {
-                if (currentShipType != anyShipType) {
-                    for (const anyShipCoords of anyShip) {
-                        for (const currentShipCoords of currentShip) {
-                            isMatch =
+                if (currentShipType !== anyShipType) {
+                    for (const currentShipCoords of currentShip) {
+                        for (const anyShipCoords of anyShip) {
+                            isValid =
                                 anyShipCoords.toString() !==
                                 currentShipCoords.toString();
-                            if (isMatch) break;
+                            if (!isValid) break;
                         }
-                        if (isMatch) break;
+                        if (!isValid) break;
                     }
+                    if (!isValid) break;
                 }
             }
-        });
+            if (!isValid) break;
+        }
     }
-    return isMatch;
+    return isValid;
+};
+
+const randomlyPlaceShip = ({
+    type,
+    direction = generateRandomDir(),
+    takenCells,
+}: {
+    type: ShipType;
+    direction?: Direction;
+    takenCells: Map<string, ShipType>;
+}) => {
+    const allCells = Array.from(generateGameBoardCells().keys());
+    const emptyCells: string[] = [];
+    for (const cell of allCells) {
+        if (!takenCells.has(cell)) emptyCells.push(cell);
+    }
+    const possibleStarts = emptyCells.filter((str) => {
+        const { x, y } = convertStringToCoords(str);
+        const newShip = new Ship({
+            coords: { x, y },
+            direction,
+            type,
+        });
+        let isValid = true;
+
+        if (direction === "hor") isValid = x + shipsLength[type] <= 10;
+        else isValid = y + shipsLength[type] <= 10;
+
+        if (isValid) {
+            for (const coord of newShip) {
+                isValid = !takenCells.has(coord.toString());
+                if (!isValid) break;
+            }
+        } else {
+            return false;
+        }
+        return isValid;
+    });
+
+    if (possibleStarts.length === 0) {
+        randomlyPlaceShip({
+            type,
+            direction: directionTypes.find((dir) => dir !== direction),
+            takenCells,
+        });
+    } else {
+        const randomStart = sample(possibleStarts);
+
+        if (!randomStart) throw new Error("No available space");
+        const newShip = new Ship({
+            type,
+            coords: convertStringToCoords(randomStart),
+            direction,
+        });
+
+        for (const coord of newShip) {
+            takenCells.set(coord.toString(), type);
+        }
+
+        return { takenCells, newShip };
+    }
+};
+
+export const randomlyPlaceShips = () => {
+    const takenCells = new Map<string, ShipType>();
+    const ships = new Map<ShipType, Ship>();
+    for (const type of Object.keys(shipsLength) as ShipType[]) {
+        const { newShip } = randomlyPlaceShip({
+            type,
+            takenCells,
+        })!;
+        ships.set(type, newShip);
+    }
+
+    return { takenCells, ships };
 };

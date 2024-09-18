@@ -1,7 +1,8 @@
 import {
     convertStringToCoords,
     generateRandomShip,
-    isGameboardValid,
+    checkShipsPlacement,
+    randomlyPlaceShips,
 } from "@/utils";
 import { Ship } from "battleships-engine";
 
@@ -61,7 +62,7 @@ it("should check gameboard", () => {
         }),
         new Ship({
             type: "battleship",
-            direction: "vert",
+            direction: "hor",
             coords: { x: 1, y: 4 },
         }),
         new Ship({
@@ -81,5 +82,10 @@ it("should check gameboard", () => {
         }),
     ];
     const shipsMap = new Map(ships.map((ship) => [ship.type, ship]));
-    expect(isGameboardValid(shipsMap)).toBe(true);
+    expect(checkShipsPlacement(shipsMap)).toBe(true);
+});
+
+it.each([1, 2, 3, 4, 5])("should randomly place ships", () => {
+    const { ships } = randomlyPlaceShips();
+    expect(checkShipsPlacement(ships)).toBe(true);
 });

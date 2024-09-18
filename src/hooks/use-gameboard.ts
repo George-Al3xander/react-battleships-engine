@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import {
     convertStringToCoords,
     generateGameBoardCells,
-    generateRandomDir,
-    generateRandomShip,
+    randomlyPlaceShips as randomUtil,
 } from "@/utils";
 
-import random from "lodash/random";
 import { Coords, Ship, Direction, ShipType, TCoords } from "battleships-engine";
-import { directionTypes, shipsLength } from "@/consts";
+import { cellsMapsTypes, mapsCheckedByValue } from "@/consts";
 
 const useGameBoard = (initialShips?: Ship[]) => {
     const [ships, setShips] = useState<Map<ShipType, Ship>>(() => {
@@ -136,73 +134,6 @@ const useGameBoard = (initialShips?: Ship[]) => {
         } else return false;
     };
 
-    const randomlyPlaceShip = ({
-        type,
-        direction = generateRandomDir(),
-    }: {
-        type: ShipType;
-        direction?: Direction;
-    }) => {
-        if (takenCells.size > 0) {
-            const allCells = generateGameBoardCells();
-            const emptyCells: string[] = [];
-            for (const [cell] of allCells) {
-                if (!takenCells.has(cell)) emptyCells.push(cell);
-            }
-
-            const possibleStarts = emptyCells.filter((str) => {
-                const { x, y } = convertStringToCoords(str);
-                const newShip = new Ship({
-                    coords: { x, y },
-                    direction,
-                    type,
-                });
-                let isValid = true;
-
-                if (direction === "hor") isValid = x + shipsLength[type] <= 10;
-                else isValid = y + shipsLength[type] <= 10;
-
-                if (isValid) {
-                    for (const coord of newShip) {
-                        isValid = !takenCells.has(coord.toString());
-                        if (!isValid) break;
-                    }
-                } else {
-                    return false;
-                }
-                return isValid;
-            });
-
-            if (possibleStarts.length === 0) {
-                randomlyPlaceShip({
-                    type,
-                    direction: directionTypes.find((dir) => dir !== direction),
-                });
-            } else {
-                const randomStart =
-                    possibleStarts[random(possibleStarts.length - 1)];
-
-                if (!randomStart) throw new Error("No available space");
-
-                placeShip({
-                    type,
-                    coords: convertStringToCoords(randomStart),
-                    direction,
-                });
-            }
-        } else {
-            generateRandomShip({ placeShip, shipType: type });
-        }
-    };
-
-    const randomlyPlaceShips = () => {
-        setShips(new Map());
-        setTakenCells(new Map());
-        (Object.keys(shipsLength) as ShipType[]).forEach((type) =>
-            randomlyPlaceShip({ type }),
-        );
-    };
-
     const resetGameBoard = () => {
         setShips(new Map());
         setTakenCells(new Map());
@@ -211,19 +142,47 @@ const useGameBoard = (initialShips?: Ship[]) => {
         setHasLost(false);
     };
 
+    const randomlyPlaceShips = () => {
+        resetGameBoard();
+        const { takenCells: localTakenCells, ships: localShips } = randomUtil();
+        setTakenCells(localTakenCells);
+        setShips(localShips);
+    };
+
+    const maps: Record<(typeof cellsMapsTypes)[number], Map<any, any>> = {
+        hit: hitCells,
+        missed,
+        taken: takenCells,
+    };
+    const checkIfCoordsInMap = (
+        cellsMapType: "hit" | "missed" | "taken",
+        param: Coords | string,
+    ) => {
+        if (!(param instanceof Coords))
+            param = new Coords(convertStringToCoords(param));
+
+        if (cellsMapsTypes.includes(cellsMapType)) {
+            if (mapsCheckedByValue.has(cellsMapType))
+                return maps[cellsMapType].get(param.toString()) === true;
+            else return maps[cellsMapType].has(param.toString());
+        } else {
+            throw new Error("Invalid cells map type!");
+        }
+    };
+
     return {
         placeShip,
         ships,
         takenCells,
         missed,
         hitCells,
-        randomlyPlaceShip,
         randomlyPlaceShips,
         hasLost,
         receiveAttack,
         inspectCoordsInShips,
         resetGameBoard,
         fillTakenCellsWithShip,
+        checkIfCoordsInMap,
     };
 };
 

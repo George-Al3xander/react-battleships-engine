@@ -10,4 +10,11 @@ export const shipsLength: { [K in ShipType]: number } = {
 
 export const directionTypes = ["vert", "hor"] as const;
 export const coordsType = ["x", "y"] as const;
+
 export const numberRegExp = /\d+/;
+
+export const cellsMapsTypes = ["hit", "missed", "taken"] as const;
+export const mapsCheckedByValue = new Set<(typeof cellsMapsTypes)[number]>([
+    "hit",
+    "missed",
+]);

@@ -1,9 +1,9 @@
 import useGameBoard from "@/hooks/use-gameboard";
 
-import { Ship, ShipType, TCoords } from "battleships-engine";
+import { Coords, Ship, ShipType, TCoords } from "battleships-engine";
 import { shipsLength } from "@/consts";
-import { isGameboardValid } from "@/utils";
-import { act, renderHook } from "@testing-library/react-hooks";
+import { checkShipsPlacement } from "@/utils";
+import { act, renderHook, RenderResult } from "@testing-library/react-hooks";
 import { waitFor } from "@testing-library/dom";
 
 const receiveAttackSetup = (
@@ -40,48 +40,49 @@ const receiveAttackSetup = (
 };
 
 describe("GameBoard", () => {
-    it("should place a ship", () => {
-        const { result } = renderHook(() => useGameBoard());
+    describe("depends on the ship placement", () => {
+        let result: RenderResult<ReturnType<typeof useGameBoard>>;
+        beforeAll(() => {
+            const hookRender = renderHook(() => useGameBoard());
+            result = hookRender.result;
 
-        act(() => {
-            result.current.placeShip({
-                type: "cruiser",
-                coords: { x: 1, y: 4 },
-                direction: "hor",
-            });
-        });
-        expect(result.current.ships.get("cruiser")).toBeInstanceOf(Ship);
-        expect(result.current.ships.get("cruiser")).toHaveProperty("coords");
-        expect(result.current.ships.get("cruiser")).toHaveProperty("direction");
-        expect(result.current.ships.get("cruiser")?.coords.x).toBe(1);
-        expect(result.current.ships.get("cruiser")?.coords.y).toBe(4);
-        expect(result.current.ships.get("cruiser")?.direction).toBe("hor");
-    });
-
-    it("should throw the ship overlap error", () => {
-        const { result } = renderHook(() => useGameBoard());
-        act(() =>
-            result.current.placeShip({
-                type: "cruiser",
-                coords: { x: 1, y: 4 },
-                direction: "hor",
-            }),
-        );
-
-        try {
-            act(() =>
+            act(() => {
                 result.current.placeShip({
                     type: "cruiser",
-                    coords: { x: 2, y: 4 },
-                    direction: "vert",
-                }),
+                    coords: { x: 1, y: 4 },
+                    direction: "hor",
+                });
+            });
+        });
+        it("should place a ship", () => {
+            expect(result.current.ships.get("cruiser")).toBeInstanceOf(Ship);
+            expect(result.current.ships.get("cruiser")).toHaveProperty(
+                "coords",
             );
-            expect(1).toBe(2);
-        } catch (e) {
-            expect(e instanceof Error ? e.message : "Bad").toBe(
-                "Ship placement error: The ship overlaps with another ship.",
+            expect(result.current.ships.get("cruiser")).toHaveProperty(
+                "direction",
             );
-        }
+            expect(result.current.ships.get("cruiser")?.coords.x).toBe(1);
+            expect(result.current.ships.get("cruiser")?.coords.y).toBe(4);
+            expect(result.current.ships.get("cruiser")?.direction).toBe("hor");
+        });
+
+        it("should throw the ship overlap error", () => {
+            try {
+                act(() =>
+                    result.current.placeShip({
+                        type: "aircraft_carrier",
+                        coords: { x: 2, y: 4 },
+                        direction: "vert",
+                    }),
+                );
+                expect(1).toBe(2);
+            } catch (e) {
+                expect(e instanceof Error ? e.message : "Bad").toBe(
+                    "Ship placement error: The ship overlaps with another ship.",
+                );
+            }
+        });
     });
 
     describe("utils", () => {
@@ -241,7 +242,7 @@ describe("GameBoard", () => {
         });
     });
 
-    it("should randomly place ships", () => {
+    it.each([1, 2, 3, 4, 5])("should randomly place ships", () => {
         const { result } = renderHook(() => useGameBoard());
 
         const oldShips = result.current.ships;
@@ -249,7 +250,32 @@ describe("GameBoard", () => {
             result.current.randomlyPlaceShips();
         });
         const newShips = result.current.ships;
-        expect(isGameboardValid(result.current.ships)).toBe(true);
+        expect(checkShipsPlacement(result.current.ships)).toBe(true);
         expect(oldShips).not.toMatchObject(newShips);
     });
+});
+
+it("should check if coords in map", () => {
+    const { result } = renderHook(() => useGameBoard());
+    act(() => {
+        result.current.placeShip({
+            type: "cruiser",
+            coords: { x: 1, y: 4 },
+            direction: "hor",
+        });
+    });
+    expect(result.current.checkIfCoordsInMap("taken", "(1,4)")).toBe(true);
+
+    const hitCoords = { x: 2, y: 4 };
+    const missedCoords = { x: 9, y: 9 };
+    act(() => {
+        result.current.receiveAttack(hitCoords);
+        result.current.receiveAttack(missedCoords);
+    });
+    expect(
+        result.current.checkIfCoordsInMap("hit", new Coords(hitCoords)),
+    ).toBe(true);
+    expect(
+        result.current.checkIfCoordsInMap("missed", new Coords(missedCoords)),
+    ).toBe(true);
 });
