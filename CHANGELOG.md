@@ -1,5 +1,11 @@
 # @react/battleships-engine
 
+## 0.1.0
+
+### Minor Changes
+
+-   fae7c7d: Refactor the project to use classes & types from the original package, instead of recreating them in the current package. Provide tests for the React environment cases.
+
 ## 0.0.3
 
 ### Patch Changes
