@@ -1,5 +1,11 @@
 # @react/battleships-engine
 
+## 0.1.2
+
+### Patch Changes
+
+-   9f41855: Add methods for ship removal and movement to the GameBoard class. Implement tests for the new methods. Add exports of the potentially useful variables from the constants.ts file to the index.ts file.
+
 ## 0.1.1
 
 ### Patch Changes
