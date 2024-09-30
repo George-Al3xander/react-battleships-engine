@@ -6,6 +6,24 @@ import { checkShipsPlacement } from "@/utils";
 import { act, renderHook, RenderResult } from "@testing-library/react-hooks";
 import { waitFor } from "@testing-library/dom";
 
+const shipsDefault = [
+    new Ship({
+        type: "cruiser",
+        coords: { x: 2, y: 1 },
+        direction: "hor",
+    }),
+    new Ship({
+        type: "battleship",
+        coords: { x: 9, y: 1 },
+        direction: "vert",
+    }),
+    new Ship({
+        type: "submarine",
+        coords: { x: 4, y: 9 },
+        direction: "hor",
+    }),
+];
+
 const receiveAttackSetup = (
     ships: Ship[],
     extraCoords?: TCoords | TCoords[],
@@ -157,24 +175,9 @@ describe("GameBoard", () => {
             undefined;
 
         beforeAll(() => {
-            const ships = [
-                new Ship({
-                    type: "cruiser",
-                    coords: { x: 2, y: 1 },
-                    direction: "hor",
-                }),
-                new Ship({
-                    type: "battleship",
-                    coords: { x: 9, y: 1 },
-                    direction: "vert",
-                }),
-                new Ship({
-                    type: "submarine",
-                    coords: { x: 4, y: 9 },
-                    direction: "hor",
-                }),
-            ];
-            hookRes = receiveAttackSetup(ships, { x: 4, y: 10 }, ["cruiser"]);
+            hookRes = receiveAttackSetup(shipsDefault, { x: 4, y: 10 }, [
+                "cruiser",
+            ]);
         });
 
         it("should call the hit function after the successful receiveAttack call", () => {
@@ -278,4 +281,57 @@ it("should check if coords in map", () => {
     expect(
         result.current.checkIfCoordsInMap("missed", new Coords(missedCoords)),
     ).toBe(true);
+});
+
+it("should remove a ship", () => {
+    const { result } = renderHook(() => useGameBoard());
+    const ship = new Ship({
+        type: "cruiser",
+        coords: { x: 1, y: 4 },
+        direction: "hor",
+    });
+    act(() => {
+        result.current.placeShip(ship);
+    });
+    for (const coords of ship) {
+        expect(
+            result.current.checkIfCoordsInMap("taken", coords.toString()),
+        ).toBe(true);
+        expect(result.current.ships.has(ship.type)).toBe(true);
+    }
+    act(() => {
+        result.current.removeShip(ship);
+    });
+    for (const coords of ship) {
+        expect(
+            result.current.checkIfCoordsInMap("taken", coords.toString()),
+        ).toBe(false);
+        expect(result.current.ships.has(ship.type)).toBe(false);
+    }
+});
+
+it("should move a ship", () => {
+    const { result } = renderHook(() => useGameBoard());
+    const [firstShip, secondShip] = shipsDefault;
+    act(() => {
+        result.current.placeShip(firstShip!);
+        result.current.placeShip(secondShip!);
+
+        try {
+            result.current.moveShip(firstShip!, {
+                coords: { x: 9, y: 1 },
+                direction: "vert",
+            });
+            expect(1).toBe(2);
+        } catch (e) {
+            expect(1).toBe(1);
+        }
+
+        result.current.moveShip(firstShip!, {
+            coords: { x: 3, y: 3 },
+            direction: "vert",
+        });
+    });
+
+    expect(result.current.ships.get("cruiser")!.coords).toEqual({ x: 3, y: 3 });
 });

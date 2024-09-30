@@ -101,6 +101,27 @@ const useGameBoard = (initialShips?: Ship[]) => {
         });
     };
 
+    const removeShip = (ship: Ship) => {
+        const newShips = new Map(ships);
+        newShips.delete(ship.type);
+        setShips(newShips);
+        const newTakenCells = new Map(takenCells);
+
+        for (const coords of ship) {
+            newTakenCells.delete(coords.toString());
+        }
+
+        setTakenCells(newTakenCells);
+    };
+
+    const moveShip = (
+        startingShip: Ship,
+        newShipInfo: { coords: TCoords; direction: Direction },
+    ) => {
+        removeShip(startingShip);
+        placeShip({ type: startingShip.type, ...newShipInfo });
+    };
+
     const receiveAttack = (coords: TCoords) => {
         const coordsClass = new Coords(coords);
         if (missed.get(coordsClass.toString()) === true)
@@ -173,9 +194,14 @@ const useGameBoard = (initialShips?: Ship[]) => {
     return {
         placeShip,
         ships,
+        setShips,
         takenCells,
+        setTakenCells,
         missed,
+        setMissed,
         hitCells,
+        setHitCells,
+        setHasLost,
         randomlyPlaceShips,
         hasLost,
         receiveAttack,
@@ -183,6 +209,8 @@ const useGameBoard = (initialShips?: Ship[]) => {
         resetGameBoard,
         fillTakenCellsWithShip,
         checkIfCoordsInMap,
+        removeShip,
+        moveShip,
     };
 };
 

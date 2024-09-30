@@ -5,10 +5,10 @@ import { userEvent } from "@testing-library/user-event";
 import { clsx } from "clsx";
 import useGameBoard from "@/hooks/use-gameboard";
 import { Ship, Coords } from "battleships-engine";
-import { convertStringToCoords } from "@/utils";
+import { convertStringToCoords, generateGameBoardCells } from "@/utils";
 import { waitFor } from "@testing-library/dom";
 
-const ships = [
+const defaultShips = [
     new Ship({
         type: "cruiser",
         coords: { x: 2, y: 1 },
@@ -29,17 +29,20 @@ const ships = [
 const RenderGameboard = ({ propShips }: { propShips?: Ship[] }) => {
     const {
         hasLost,
-        takenCells,
-        hitCells,
         randomlyPlaceShips,
-        missed,
+        removeShip,
         receiveAttack,
-        resetGameBoard,
         checkIfCoordsInMap,
+        ships,
+        setMissed,
+        setHitCells,
+        setHasLost,
     } = useGameBoard(propShips);
 
     const resetGB = () => {
-        resetGameBoard();
+        setMissed(generateGameBoardCells());
+        setHitCells(generateGameBoardCells());
+        setHasLost(false);
     };
 
     useEffect(() => {
@@ -52,7 +55,14 @@ const RenderGameboard = ({ propShips }: { propShips?: Ship[] }) => {
         for (let j = 1; j <= 10; j++) {
             const coord = new Coords({ x: i, y: j });
             const c = coord.toString();
-
+            const ship = [...ships.values()].find((s) => {
+                let isMatch = false;
+                for (const possibleCoords of s) {
+                    isMatch = possibleCoords.toString() === c;
+                    if (isMatch) break;
+                }
+                return isMatch;
+            });
             cells.push(
                 <td
                     onClick={() => receiveAttack(coord)}
@@ -64,6 +74,14 @@ const RenderGameboard = ({ propShips }: { propShips?: Ship[] }) => {
                         missed: checkIfCoordsInMap("missed", c),
                     })}
                 >
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            removeShip(ship!);
+                        }}
+                    >
+                        Remove-{c}
+                    </button>
                     cell
                 </td>,
             );
@@ -98,12 +116,12 @@ const renderGameBoard = (paramShips?: Ship[]) =>
 
 describe("GameBoard", () => {
     beforeEach(() => {
-        renderGameBoard(ships);
+        renderGameBoard(defaultShips);
     });
 
     describe("Render", () => {
         it("should render the table", () => {
-            for (const ship of ships) {
+            for (const ship of defaultShips) {
                 for (const coord of ship) {
                     const cell = screen.getByTestId(coord.toString());
                     expect(cell).toBeInTheDocument();
@@ -140,15 +158,31 @@ describe("GameBoard", () => {
             },
         );
 
+        it("should remove a ship", async () => {
+            const [ship] = defaultShips;
+            const cell = screen.getByRole("button", { name: `Remove-(2,1)` });
+            for (const coords of ship!) {
+                expect(screen.getByTestId(coords.toString())).toHaveClass(
+                    "taken_cell",
+                );
+            }
+            await userEvent.click(cell);
+            for (const coords of ship!) {
+                expect(screen.getByTestId(coords.toString())).toHaveClass(
+                    "empty",
+                );
+            }
+        });
+
         it("should show the loss message if 'hasLost' is truthy", async () => {
             expect(screen.queryByText("You lose!")).not.toBeInTheDocument();
-            for (const ship of ships) {
+            for (const ship of defaultShips) {
                 for (const coord of ship) {
                     const cell = screen.getByTestId(coord.toString());
                     await userEvent.click(cell);
                 }
             }
-            for (const ship of ships) {
+            for (const ship of defaultShips) {
                 for (const coord of ship) {
                     const cell = screen.queryByTestId(coord.toString());
                     await waitFor(() => expect(cell).not.toBeInTheDocument());
@@ -159,9 +193,12 @@ describe("GameBoard", () => {
         });
 
         it("should update the cell's className based on the state change", async () => {
-            await userEvent.click(
-                screen.getByRole("button", { name: "Reset" }),
-            );
+            await waitFor(async () => {
+                await userEvent.click(
+                    screen.getByRole("button", { name: "Reset" }),
+                );
+            });
+
             const cells: [string, "empty" | "hit_cell" | "missed", boolean][] =
                 [
                     ["(10,10)", "missed", true],
@@ -170,7 +207,7 @@ describe("GameBoard", () => {
                 ];
 
             cells.forEach(async ([coord, className, doClick]) => {
-                const cell = screen.getByTestId(coord);
+                const cell = await waitFor(() => screen.getByTestId(coord));
                 expect(cell).toHaveClass("empty");
                 if (doClick) {
                     await userEvent.click(cell);
