@@ -3,7 +3,7 @@
     "description": "A TypeScript-based Battleship game engine for React, featuring ship placement, attack handling, and game logic management.",
     "license": "MIT",
     "author": "George V.",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "main": "dist/index.js",
     "module": "dist/index.cjs",
     "types": "dist/index.dt.ts",
